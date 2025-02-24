@@ -2,16 +2,18 @@ import pandas as pd
 import regex
 
 class Word:
-    def __init__(self, word, path_to_known_csv="./data/known.csv"):
+    def __init__(self, word, language, path_to_known_csv="./data/known.csv"):
         """
         Initialize a Word object.
 
         Args:
             word (str): The word to be processed. Must be a non-empty string containing valid characters.
+            language (str): The language of the word. Must be a non-empty string containing valid characters.
             path_to_known_csv (str): Path to the CSV file containing known words. Defaults to "./data/known.csv".
 
         Raises:
             ValueError: If the word is not a non-empty string or contains invalid characters.
+            ValueError: If the language is not a non-empty string or cotains invalid characters.
         """
         # Validate input word
         if not isinstance(word, str) or not word:
@@ -23,11 +25,22 @@ class Word:
         # Normalize the word by stripping whitespace and converting to lowercase
         self.word = word.strip().lower()
 
+        # Validate lang input
+        if not isinstance(language, str) or not language:
+            raise ValueError("Language must be a non-empty string")
+
+        if not self.is_valid_string(language):
+            raise ValueError("Language must contain normal characters")
+
+        # Normalize the lang and save it
+        self.lang = language.strip().lower()
+
         # Store the path to the known words CSV file
         self.path_to_known_csv = path_to_known_csv
 
         # Determine if the word is known
         self.known_word = self.is_known_word()
+
 
     def is_known_word(self):
         """
