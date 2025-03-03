@@ -115,3 +115,14 @@ def test_language():
     with pytest.raises(ValueError, match="Language must contain normal characters"):
         Word("Espejo", "😀")  # Emoji input
 
+def test_definition():
+    # Test that definition is intialized correctly with normal input
+    word1 = Word("和", "Mandarin", "and")
+
+    assert word1.definition == "and"
+
+    # Test that definition is intialized correcly with blank input
+    word2 = Word("和", "Mandarin")
+    
+    assert word2.definition == ""
+

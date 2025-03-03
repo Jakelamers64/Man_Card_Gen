@@ -2,13 +2,14 @@ import pandas as pd
 import regex
 
 class Word:
-    def __init__(self, word, language, path_to_known_csv="./data/known.csv"):
+    def __init__(self, word, language, definition="",  path_to_known_csv="./data/known.csv"):
         """
         Initialize a Word object.
 
         Args:
             word (str): The word to be processed. Must be a non-empty string containing valid characters.
             language (str): The language of the word. Must be a non-empty string containing valid characters.
+            definition (str): The words defintion in you native language defaults to ""
             path_to_known_csv (str): Path to the CSV file containing known words. Defaults to "./data/known.csv".
 
         Raises:
@@ -34,6 +35,13 @@ class Word:
 
         # Normalize the lang and save it
         self.lang = language.strip().lower()
+
+        # Validate definition input
+        if not isinstance(definition, str):
+            raise ValueError("Definition must be a string")
+
+        # Normalize the definition and save it
+        self.definition = definition
 
         # Store the path to the known words CSV file
         self.path_to_known_csv = path_to_known_csv
