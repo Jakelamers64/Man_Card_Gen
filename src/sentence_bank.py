@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 class Sentence_bank:
     """
@@ -76,7 +77,117 @@ class Sentence_bank:
         # Fill any NaN values with 0
         self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]] = self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]].fillna(0)
         # Convert to numeric values
-        self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]] = pd.to_numeric(self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]])
+        self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]] = pd.to_numeric(self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]].astype(float))
         # Validate that all ratios are between 0 and 1
         if not self.sentence_bank[REQUIRED_SENTENCE_BANK_COLUMNS[2]].between(0, 1, inclusive="both").all():
             raise ValueError("Custom Ratios must be between 0 and 1")
+
+    def get_sentences(self, word, num_sentences):
+        """
+        Get sentences containing the specified word.
+        
+        Parameters:
+        word (str): Word to search for in sentences
+        num_sentences (int): Number of sentences to return
+        
+        Returns:
+        list: List of dictionaries containing matching sentences
+        
+        Raises:
+        ValueError: If inputs are invalid
+        """
+        # Validate inputs
+        if not isinstance(word, str) or not word:
+            raise ValueError("Word must be non-empty string")
+            
+        if not isinstance(num_sentences, int) or num_sentences <= 0:
+            raise ValueError("Num_sentences must be a int greater than zero and less than len(sentences.tsv)")
+            
+        if num_sentences > len(self.sentence_bank):
+            raise ValueError("Num_sentences must be a int greater than zero and less than len(sentences.tsv)")
+            
+        # Create a safe pattern for case-insensitive search
+        # This handles special regex chars by escaping them
+        search_pattern = re.escape(word)
+        
+        # Find matching sentences (case insensitive)
+        matches = self.sentence_bank[self.sentence_bank["Sentence"].str.contains(search_pattern, case=False, regex=True, na=False)]
+        
+        # Sort by Custom Ratio (descending)
+        sorted_matches = matches.sort_values(by="Custom Ratio", ascending=False)
+        
+        # Limit to requested number of sentences (or all if fewer matches exist)
+        limit = min(num_sentences, len(sorted_matches))
+        top_matches = sorted_matches.head(limit)
+        
+        # Convert to list of dictionaries
+        result = []
+        for _, row in top_matches.iterrows():
+            result.append({
+                "Sentence": row["Sentence"],
+                "Meaning": row["Meaning"],
+                "Custom Ratio": row["Custom Ratio"]
+            })
+            
+        return result
+
+    def rank_sentences(self, known_words_path):
+        """
+        Rank sentences based on the ratio of known words they contain.
+        
+        Parameters:
+        -----------
+        known_words_path : str
+            Path to the CSV file containing known words
+        """
+        # If the sentence bank is empty, return early
+        if len(self.sentence_bank) == 0:
+            return
+            
+        # Load known words
+        try:
+            known_df = pd.read_csv(known_words_path)
+            # Convert to lowercase for case-insensitive matching and handle empty dataframe
+            if 'known' in known_df.columns and not known_df.empty:
+                known_words = set(word.lower() for word in known_df['known'] if isinstance(word, str))
+            else:
+                known_words = set()
+        except (pd.errors.EmptyDataError, FileNotFoundError):
+            known_words = set()
+            
+        # Process each sentence to calculate the ratio of known words
+        for idx, row in self.sentence_bank.iterrows():
+            if not isinstance(row['Sentence'], str) or not row['Sentence'].strip():
+                self.sentence_bank.at[idx, 'Custom Ratio'] = 0
+                continue
+                
+            # Get words from the sentence, handling various scripts and punctuation
+            sentence = row['Sentence']
+            
+            # For languages using spaces (like English, Spanish, etc.)
+            if any(ord(c) < 128 for c in sentence):  # Contains ASCII chars
+                # Remove punctuation and split by whitespace
+                words = re.sub(r'[^\w\s]', ' ', sentence.lower()).split()
+            else:
+                # For languages like Chinese where characters are words
+                words = list(sentence.lower())
+                # Remove punctuation characters
+                words = [w for w in words if not re.match(r'[^\w]', w, re.UNICODE)]
+            
+            # Skip empty sentences
+            if not words:
+                self.sentence_bank.at[idx, 'Custom Ratio'] = 0
+                continue
+                
+            # Count known words
+            known_count = sum(1 for word in words if word.lower() in known_words)
+            
+            # Calculate and store the ratio
+            if words:
+                ratio = known_count / len(words)
+                self.sentence_bank.at[idx, 'Custom Ratio'] = ratio
+            else:
+                self.sentence_bank.at[idx, 'Custom Ratio'] = 0
+    
+    def add_sentence():
+        pass
