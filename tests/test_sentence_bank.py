@@ -1,102 +1,72 @@
-import tempfile
+# Standard library imports
 import os
-import pytest
-import pandas as pd
 import re
+import tempfile
 import time
 
+# Third-party imports
+import pandas as pd
+import pytest
+
+# Local imports
 from src.sentence_bank import Sentence_bank
 
-def test_has_sentence_bank_attr():
-    """
-    Test the Sentence_bank class to ensure it properly initializes with a sentence_bank attribute
-    and handles various error conditions appropriately.
-    """
+def test_initialization_with_valid_inputs():
+    """Test initialization with valid inputs creates proper attributes."""
+    # Test default constructor
+    sb_default = Sentence_bank()
+    # Test with valid file path
+    sb_with_path = Sentence_bank("./data/sentences.tsv")
     
-    # Test initialization with default constructor
-    sentence_bank1 = Sentence_bank() 
-    # Test initialization with valid file path
-    sentence_bank2 = Sentence_bank("./data/sentences.tsv")
-                                        
-    # Verify both instances have the sentence_bank attribute
-    assert hasattr(sentence_bank1, "sentence_bank")
-    assert hasattr(sentence_bank2, "sentence_bank")
-                                                        
-    # Verify the type of sentence_bank attribute (adjust as needed for implementation)
-    assert isinstance(sentence_bank1.sentence_bank, pd.DataFrame)
-    assert isinstance(sentence_bank2.sentence_bank, pd.DataFrame)
-                                                                        
-    # Test error handling for non-existent file
-    incorrect_file_path = "./data/chinese_sentences.tsv"   
+    # Verify sentence_bank attribute exists and is a DataFrame
+    for sb in [sb_default, sb_with_path]:
+        assert hasattr(sb, "sentence_bank")
+        assert isinstance(sb.sentence_bank, pd.DataFrame)
+
+def test_initialization_with_invalid_paths():
+    """Test initialization with various invalid paths raises appropriate errors."""
+    invalid_paths = [
+        ("./data/chinese_sentences.tsv", FileNotFoundError, "[Errno 2] No such file or directory: './data/chinese_sentences.tsv'"),
+        ("", ValueError, "path_to_sentences_tsv must end with .tsv"),
+        ("./data/", ValueError, "path_to_sentences_tsv must end with .tsv"),
+        (None, ValueError, "path_to_sentences_tsv must be a non-empty string"),
+        (123, ValueError, "path_to_sentences_tsv must be a non-empty string")
+    ]
     
-    with pytest.raises(FileNotFoundError):
-        sentence_bank3 = Sentence_bank(incorrect_file_path)
-                                                                                                    
-    # Test error handling for empty string path
-    incorrect_file_path = ""
+    for path, expected_error, description in invalid_paths:
+        with pytest.raises(expected_error, match=re.escape(f"{description}")):
+            Sentence_bank(path)
 
-    with pytest.raises(ValueError): 
-        sentence_bank4 = Sentence_bank(incorrect_file_path)
-
-    # Test error handling for directory path instead of file
-    directory_path = "./data/"
-
-    with pytest.raises(ValueError):
-        sentence_bank6 = Sentence_bank(directory_path)
-
-    # Test error handling for None path
-    with pytest.raises(ValueError):
-        sentence_bank9 = Sentence_bank(None)
-
-    # Test error handling for incorrect path type (integer)
-    with pytest.raises(ValueError):
-        sentence_bank10 = Sentence_bank(123)
-
-    # Create temporary directory for file-based tests
+def test_initialization_with_problematic_files():
+    """Test initialization with problematic files (invalid format, permissions, empty)."""
     with tempfile.TemporaryDirectory() as tempdir:
         # Test invalid file format
-        tmpfilepath = os.path.join(tempdir, 'invalid_format.txt')
-
-        with open(tmpfilepath, "w") as file:
+        invalid_format_path = os.path.join(tempdir, 'invalid_format.txt')
+        with open(invalid_format_path, "w") as file:
             file.write("test")
-
         with pytest.raises(ValueError):
-            sentence_bank5 = Sentence_bank(tmpfilepath)
-
+            Sentence_bank(invalid_format_path)
+        
         # Test file with no read permissions
-        tmpfilepath = os.path.join(tempdir, 'no_permission.tsv')
-
-        # Create a basic valid sentence bank DataFrame
-        no_permission = pd.DataFrame({
+        no_perm_path = os.path.join(tempdir, 'no_permission.tsv')
+        pd.DataFrame({
             "Sentence": ["Hola! Como estas?"],
             "Meaning": ["Hello! How are you?"],
             "Custom Ratio": [1.0]
-            })
-
-        no_permission.to_csv(tmpfilepath, sep="\t")
-
-        # Remove all permissions from the file
-        os.chmod(tmpfilepath, 0o000)
-
+        }).to_csv(no_perm_path, sep="\t")
+        os.chmod(no_perm_path, 0o000)
         with pytest.raises(PermissionError):
-            sentence_bank7 = Sentence_bank(tmpfilepath)
-
+            Sentence_bank(no_perm_path)
+        
         # Test empty file handling
-        tmpfilepath = os.path.join(tempdir, 'empty.tsv')
-
-        # Create an empty DataFrame
-        empty = pd.DataFrame({
+        empty_path = os.path.join(tempdir, 'empty.tsv')
+        pd.DataFrame({
             "Sentence": [],
             "Meaning": [],
             "Custom Ratio": []
-            })
-
-        empty.to_csv(tmpfilepath, sep="\t")
-
-        sentence_bank8 = Sentence_bank(tmpfilepath)
-
-        # Verify that empty file creates an empty sentence bank
-        assert len(sentence_bank8.sentence_bank) == 0
+        }).to_csv(empty_path, sep="\t")
+        sb_empty = Sentence_bank(empty_path)
+        assert len(sb_empty.sentence_bank) == 0
 
 def test_sentence_bank_creation():
     """
@@ -899,7 +869,6 @@ def test_rank_sentences_with_whitespace_only():
         # Empty sentences should have ratio 0
         assert sentence_bank.sentence_bank.loc[0, "Custom Ratio"] == 0
         assert sentence_bank.sentence_bank.loc[1, "Custom Ratio"] == 0
-
 
 def test_add_sentence():
     pass
