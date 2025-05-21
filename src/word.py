@@ -81,3 +81,6 @@ class Word:
 
         # Use the regex to test the string
         return bool(regex.match(pattern, s))
+
+    def __str__(self):
+        return f"Word({self.word},{self.lang},{self.definition},{self.path_to_known_csv},{self.known_word})"

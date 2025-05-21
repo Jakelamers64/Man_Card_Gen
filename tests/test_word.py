@@ -126,3 +126,23 @@ def test_definition():
     
     assert word2.definition == ""
 
+class TestToStr():
+    """
+    This class is meant to test the functionality of the
+    __str__ function
+    """
+
+    def test_word_to_string_val_in(self):
+        word = Word("釣り用語".strip().lower(),"Japanese")
+
+        assert word.__str__() == f"Word({'釣り用語'.strip().lower()},japanese,,./data/known.csv,False)"
+
+    def test_word_with_definition_to_string(self):
+        """Test __str__ functionality with a definition provided"""
+        word = Word("test", "English", definition="a procedure intended to establish quality")
+        assert word.__str__() == f"Word(test,english,a procedure intended to establish quality,./data/known.csv,False)"
+
+    def test_word_with_known_status_to_string(self):
+        """Test __str__ functionality with known status set to True"""
+        word = Word("找", "English")
+        assert word.__str__() == f"Word(找,english,,./data/known.csv,True)"
