@@ -1,3 +1,6 @@
+import genanki
+
+from random import randint
 from src.word import Word
 
 class Deck:
@@ -23,4 +26,16 @@ class Deck:
             self.words.append(Word(word,language))
 
     def create_deck(self):
-        pass
+        self.deck = genanki.Deck(
+                    randint(10**(15-1),(10*15)-1),
+                    "To Add"
+                )
+
+        self.media = list()
+
+        for word in self.input_words:
+            self.deck.add_note(word.get_note())
+            self.media.extend(word.get_media())
+
+        self.package = genanki.Package(self.deck)
+        self.package.media_files = self.media

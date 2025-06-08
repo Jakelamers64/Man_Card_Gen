@@ -79,3 +79,9 @@ class TestDeckWords:
 
         for elem in simple_deck.words:
             assert isinstance(elem, Word)
+
+class TestDeckCreateDeck:
+    """
+    Class that tests function create deck
+    """
+    pass
