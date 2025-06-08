@@ -1,0 +1,9 @@
+# Runtime files
+*.swp
+*.pyc
+
+# folders
+venv
+legacy_scripts
+data
+.pytest_cache
