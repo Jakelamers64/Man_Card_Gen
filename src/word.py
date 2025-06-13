@@ -1,5 +1,6 @@
 import pandas as pd
 import regex
+import genanki
 
 class Word:
     def __init__(self, word, language, definition="",  path_to_known_csv="./data/known.csv"):
@@ -49,6 +50,37 @@ class Word:
         # Determine if the word is known
         self.known_word = self.is_known_word()
 
+        # Hardcoded Model ID
+        self.vocab_model_id = 275837465987236587
+
+        if not self.known_word:
+            self.vocab_note = self.get_vocab_note()
+        else:
+            self.vocab_note = None
+
+    def get_vocab_note(self):
+        return genanki.Note(
+                    model = self.get_vocab_model(),
+                    fields = self.get_vocab_fields()
+                )
+
+    def get_vocab_fields(self):
+        """
+        returns a dict containing the following fields for
+        genanki.Note constructor field arg
+        """
+        return {
+                    "word": self.word
+                }
+
+
+
+    def get_vocab_model(self):
+        return genanki.Model(
+                    model_id = self.vocab_model_id,
+                    name = 'Vocab Card',
+                    fields = [{'name':key} for key in self.get_vocab_fields().keys()]
+                )
 
     def is_known_word(self):
         """

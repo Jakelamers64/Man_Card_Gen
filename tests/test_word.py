@@ -1,4 +1,5 @@
 import pytest
+import genanki
 from src.word import Word
 
 def test_has_attr_word():
@@ -146,3 +147,50 @@ class TestToStr():
         """Test __str__ functionality with known status set to True"""
         word = Word("找", "English")
         assert word.__str__() == f"Word(找,english,,./data/known.csv,True)"
+
+class TestWordGetVocabNote:
+    """
+    tests if the get_vocab_note() function works properly
+    """
+
+    def test_get_vocab_note_with_val_input(self):
+        """
+        test whether function returns expected fields given correct
+        in
+        """
+        word = Word("雷霆", "Chinese")
+
+        assert hasattr(word, "vocab_note")
+        assert word.vocab_note is not None
+
+class TestWordGetVocabFields:
+    def test_get_vocab_fields_with_val_input(self):
+        """
+        test whether function get fields returns valid input
+        when given correct in
+        """
+        word = Word("雷霆", "Chinese")
+        
+        vocab_fields = word.get_vocab_fields()
+
+        assert isinstance(vocab_fields, dict)
+
+        assert "雷霆" in vocab_fields["word"]
+
+class TestWordGeVocabtModel:
+    """
+    Tests the function that creates a genanki note model that
+    is passed to genanki.Note()
+    """
+    
+    def test_word_get_vocab_model_val_in(self):
+        """
+        tests get model to ensure that it works with correct in
+        """
+        word = Word("雷霆", "Chinese")
+
+        vocab_model = word.get_vocab_model()
+
+        assert isinstance(vocab_model, genanki.Model)
+        assert False
+
